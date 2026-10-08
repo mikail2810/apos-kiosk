@@ -14,7 +14,7 @@ export interface Product {
 export interface MysteryBoxTier {
   id: string
   name: 'Standard' | 'Premium' | 'Premium+'
-  description: string       // nur für Admin sichtbar
+  description: string
   price_1: number
   price_3: number
   price_5: number
@@ -55,7 +55,6 @@ export interface OrderItem {
   name: string
   quantity: number
   unit_price: number
-  // mystery only
   tier_name?: string
   size?: number
 }

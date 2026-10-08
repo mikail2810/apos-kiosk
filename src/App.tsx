@@ -1,9 +1,9 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { ShopPage } from './pages/ShopPage'
-import { CheckoutPage } from './pages/CheckoutPage'
-import { AdminLoginPage } from './pages/AdminLoginPage'
-import { AdminDashboardPage } from './pages/AdminDashboardPage'
-import { AdminProductsPage } from './pages/AdminProductsPage'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import ShopPage from './pages/ShopPage'
+import CheckoutPage from './pages/CheckoutPage'
+import AdminLoginPage from './pages/AdminLoginPage'
+import AdminDashboardPage from './pages/AdminDashboardPage'
+import AdminProductsPage from './pages/AdminProductsPage'
 
 export default function App() {
   return (
@@ -14,6 +14,7 @@ export default function App() {
         <Route path="/admin" element={<AdminLoginPage />} />
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
         <Route path="/admin/products" element={<AdminProductsPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )

@@ -1,28 +1,30 @@
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { ShoppingBag, Sparkles, Package } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
-import { ProductCard } from '../components/customer/ProductCard'
-import { MysteryBoxCard } from '../components/customer/MysteryBoxCard'
-import { CartDrawer } from '../components/customer/CartDrawer'
-import { Badge } from '../components/ui/Badge'
-import { useCart } from '../lib/cart'
-import type { Product, MysteryBoxTier } from '../types'
+import { Product, MysteryBoxTier } from '../types'
+import { useCart } from '../hooks/useCart'
+import ProductCard from '../components/customer/ProductCard'
+import MysteryBoxCard from '../components/customer/MysteryBoxCard'
+import CartDrawer from '../components/customer/CartDrawer'
+import { ShoppingCart, Search, Settings } from 'lucide-react'
 
-type Tab = 'products' | 'mystery'
+const TABS = ['Produkte', 'Mystery Box'] as const
+type Tab = typeof TABS[number]
 
-export function ShopPage() {
-  const [tab, setTab] = useState<Tab>('products')
+export default function ShopPage() {
+  const navigate = useNavigate()
+  const [tab, setTab] = useState<Tab>('Produkte')
   const [products, setProducts] = useState<Product[]>([])
   const [tiers, setTiers] = useState<MysteryBoxTier[]>([])
-  const [cartOpen, setCartOpen] = useState(false)
   const [loading, setLoading] = useState(true)
-  const items = useCart(s => s.items)
+  const [search, setSearch] = useState('')
+  const { count, openCart } = useCart()
 
   useEffect(() => {
     Promise.all([
       supabase.from('products').select('*').eq('active', true).order('name'),
-      supabase.from('mystery_box_tiers').select('*').eq('active', true)
+      supabase.from('mystery_box_tiers').select('*').eq('active', true),
     ]).then(([{ data: p }, { data: t }]) => {
       setProducts(p ?? [])
       setTiers(t ?? [])
@@ -30,75 +32,114 @@ export function ShopPage() {
     })
   }, [])
 
+  const filtered = products.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    p.brand.toLowerCase().includes(search.toLowerCase())
+  )
+
   return (
-    <div className="min-h-screen bg-brand-bg">
+    <div className="min-h-dvh bg-brand-bg">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-brand-bg/90 backdrop-blur-sm
-                         border-b border-brand-border px-5 py-4">
-        <div className="flex items-center justify-between max-w-lg mx-auto">
+      <header className="sticky top-0 z-20 bg-brand-bg/90 backdrop-blur-md border-b border-brand-border">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
           <div>
-            <p className="font-display font-bold text-xl">Apo's Kiosk</p>
-            <p className="text-xs text-brand-text-muted">Bestell & hol ab</p>
+            <h1 className="font-display font-bold text-xl text-brand-text">Apo's Kiosk</h1>
+            <p className="text-xs text-brand-text-muted">Schule Kiosk</p>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setCartOpen(true)}
-            className="relative p-2"
-          >
-            <ShoppingBag size={24} className="text-brand-text" />
-            <Badge count={items.length} />
-          </motion.button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => navigate('/admin')} className="p-2 rounded-xl hover:bg-brand-surface-2 text-brand-text-faint">
+              <Settings className="w-4 h-4" />
+            </button>
+            <button onClick={openCart} className="relative p-2 rounded-xl hover:bg-brand-surface-2 text-brand-text">
+              <ShoppingCart className="w-5 h-5" />
+              {count() > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1 -right-1 w-5 h-5 bg-brand-accent rounded-full text-xs font-bold text-white flex items-center justify-center"
+                >
+                  {count()}
+                </motion.span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="max-w-3xl mx-auto px-4 pb-3 flex gap-1">
+          {TABS.map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`relative px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                tab === t ? 'text-brand-accent' : 'text-brand-text-muted hover:text-brand-text'
+              }`}
+            >
+              {t}
+              {tab === t && (
+                <motion.div layoutId="tab-indicator" className="absolute inset-0 bg-brand-accent/10 rounded-xl border border-brand-accent/20" />
+              )}
+            </button>
+          ))}
         </div>
       </header>
 
-      {/* Tab Bar */}
-      <div className="sticky top-[72px] z-20 bg-brand-bg px-5 pt-4 pb-2">
-        <div className="flex gap-2 max-w-lg mx-auto">
-          {[
-            { id: 'products', label: 'Produkte', icon: Package },
-            { id: 'mystery', label: 'Mystery Box', icon: Sparkles },
-          ].map(({ id, label, icon: Icon }) => (
-            <motion.button
-              key={id}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setTab(id as Tab)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl
-                          text-sm font-semibold transition-colors
-                          ${tab === id
-                            ? 'bg-brand-accent text-white'
-                            : 'bg-brand-surface text-brand-text-muted'}`}
-            >
-              <Icon size={16} />
-              {label}
-            </motion.button>
-          ))}
-        </div>
-      </div>
-
-      {/* Content */}
-      <main className="px-5 py-4 max-w-lg mx-auto">
-        {loading ? (
-          <div className="grid grid-cols-2 gap-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="card h-52 animate-pulse bg-brand-surface" />
-            ))}
-          </div>
-        ) : tab === 'products' ? (
-          <div className="grid grid-cols-2 gap-3">
-            {products.map((p, i) => (
-              <ProductCard key={p.id} product={p} index={i} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {tiers.map((t, i) => (
-              <MysteryBoxCard key={t.id} tier={t} index={i} />
-            ))}
+      <main className="max-w-3xl mx-auto px-4 py-4">
+        {/* Search */}
+        {tab === 'Produkte' && (
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-text-faint" />
+            <input
+              className="input-field pl-9"
+              placeholder="Suchen..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
           </div>
         )}
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            {tab === 'Produkte' ? (
+              loading ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="skeleton h-48 rounded-2xl" />
+                  ))}
+                </div>
+              ) : filtered.length === 0 ? (
+                <p className="text-center text-brand-text-muted py-16">Keine Produkte gefunden</p>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {filtered.map((p, i) => (
+                    <ProductCard key={p.id} product={p} index={i} />
+                  ))}
+                </div>
+              )
+            ) : (
+              loading ? (
+                <div className="space-y-4">
+                  {[1,2,3].map(i => <div key={i} className="skeleton h-48 rounded-2xl" />)}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {tiers.map(tier => (
+                    <MysteryBoxCard key={tier.id} tier={tier} />
+                  ))}
+                </div>
+              )
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
-      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      <CartDrawer />
     </div>
   )
 }

@@ -1,26 +1,28 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Trash2, ShoppingBag } from 'lucide-react'
-import { useCart } from '../../lib/cart'
+import { useCart } from '../../hooks/useCart'
+import { ShoppingCart, X, Trash2, Minus, Plus, ArrowRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-interface Props {
-  open: boolean
-  onClose: () => void
-}
-
-export function CartDrawer({ open, onClose }: Props) {
-  const { items, remove, total } = useCart()
+export default function CartDrawer() {
+  const { isOpen, closeCart, items, removeItem, updateQuantity, total, count } = useCart()
   const navigate = useNavigate()
+
+  const checkout = () => {
+    closeCart()
+    navigate('/checkout')
+  }
 
   return (
     <AnimatePresence>
-      {open && (
+      {isOpen && (
         <>
           {/* Backdrop */}
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0 bg-black/60 z-40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeCart}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-30"
           />
 
           {/* Drawer */}
@@ -28,76 +30,92 @@ export function CartDrawer({ open, onClose }: Props) {
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ ease: [0.32, 0.72, 0, 1], duration: 0.35 }}
-            className="fixed bottom-0 inset-x-0 z-50 bg-brand-surface
-                       rounded-t-3xl max-h-[80vh] flex flex-col"
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+            className="fixed bottom-0 left-0 right-0 z-40 bg-brand-surface border-t border-brand-border rounded-t-3xl max-h-[85dvh] flex flex-col"
           >
             {/* Handle */}
-            <div className="w-10 h-1 bg-brand-border rounded-full mx-auto mt-3 mb-1" />
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 bg-brand-border-2 rounded-full" />
+            </div>
 
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-brand-border">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-brand-border">
               <div className="flex items-center gap-2">
-                <ShoppingBag size={20} className="text-brand-accent" />
-                <span className="font-display font-bold text-lg">Warenkorb</span>
+                <ShoppingCart className="w-5 h-5 text-brand-accent" />
+                <h2 className="font-display font-bold text-brand-text">Warenkorb</h2>
+                {count() > 0 && (
+                  <span className="w-5 h-5 bg-brand-accent rounded-full text-xs font-bold text-white flex items-center justify-center">
+                    {count()}
+                  </span>
+                )}
               </div>
-              <button onClick={onClose} className="p-1 text-brand-text-muted">
-                <X size={20} />
+              <button onClick={closeCart} className="p-2 rounded-xl hover:bg-brand-surface-2 text-brand-text-muted">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Items */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
-              {items.length === 0 && (
-                <p className="text-center text-brand-text-muted py-10">
-                  Noch nichts drin.
-                </p>
+            <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+              {items.length === 0 ? (
+                <div className="text-center py-12">
+                  <ShoppingCart className="w-10 h-10 text-brand-text-faint mx-auto mb-3" />
+                  <p className="text-brand-text-muted">Warenkorb ist leer</p>
+                </div>
+              ) : (
+                <AnimatePresence>
+                  {items.map((item, i) => {
+                    const name = item.type === 'product'
+                      ? item.product.name
+                      : `Mystery Box ${item.tier.name} (×${item.size})`
+                    const price = item.type === 'product'
+                      ? item.product.price
+                      : item.tier[`price_${item.size}` as keyof typeof item.tier] as number
+
+                    return (
+                      <motion.div
+                        key={i}
+                        layout
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="card flex items-center gap-3"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-brand-text text-sm truncate">{name}</p>
+                          <p className="text-xs text-brand-accent">{(price * item.quantity).toFixed(2)} €</p>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => updateQuantity(i, item.quantity - 1)}
+                            className="w-8 h-8 rounded-lg bg-brand-surface-2 hover:bg-brand-muted flex items-center justify-center text-brand-text-muted"
+                          >
+                            {item.quantity === 1 ? <Trash2 className="w-3.5 h-3.5 text-red-400" /> : <Minus className="w-3.5 h-3.5" />}
+                          </button>
+                          <span className="w-5 text-center text-sm font-semibold text-brand-text">{item.quantity}</span>
+                          <button
+                            onClick={() => updateQuantity(i, item.quantity + 1)}
+                            className="w-8 h-8 rounded-lg bg-brand-surface-2 hover:bg-brand-muted flex items-center justify-center text-brand-text-muted"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </motion.div>
+                    )
+                  })}
+                </AnimatePresence>
               )}
-              {items.map((item, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="flex items-center justify-between gap-3
-                             bg-brand-bg rounded-xl px-4 py-3"
-                >
-                  <div className="flex-1 min-w-0">
-                    {item.type === 'product' ? (
-                      <>
-                        <p className="font-semibold text-sm truncate">{item.product.name}</p>
-                        <p className="text-xs text-brand-text-muted">{item.quantity}x · {(item.product.price * item.quantity).toFixed(2)} €</p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="font-semibold text-sm">{item.tier.name} Mystery Box</p>
-                        <p className="text-xs text-brand-text-muted">{item.size} Produkte · {(item.tier[`price_${item.size}` as keyof typeof item.tier] as number).toFixed(2)} €</p>
-                      </>
-                    )}
-                  </div>
-                  <button onClick={() => remove(i)} className="text-brand-text-muted p-1">
-                    <Trash2 size={16} />
-                  </button>
-                </motion.div>
-              ))}
             </div>
 
             {/* Footer */}
             {items.length > 0 && (
-              <div className="px-5 pb-8 pt-4 border-t border-brand-border flex flex-col gap-3">
-                <div className="flex justify-between">
+              <div className="px-4 py-4 border-t border-brand-border">
+                <div className="flex justify-between text-sm mb-3">
                   <span className="text-brand-text-muted">Gesamt</span>
-                  <span className="font-display font-bold text-brand-accent text-xl">
-                    {total().toFixed(2)} €
-                  </span>
+                  <span className="font-bold text-brand-accent text-lg">{total().toFixed(2)} €</span>
                 </div>
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => { onClose(); navigate('/checkout') }}
-                  className="btn-primary w-full text-center"
-                >
-                  Weiter zur Bestellung
-                </motion.button>
+                <button onClick={checkout} className="btn-primary w-full flex items-center justify-center gap-2">
+                  Zur Kasse <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
             )}
           </motion.div>

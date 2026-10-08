@@ -1,53 +1,59 @@
 import { motion } from 'framer-motion'
-import { Plus } from 'lucide-react'
-import type { Product } from '../../types'
-import { useCart } from '../../lib/cart'
+import { useCart } from '../../hooks/useCart'
+import { Product } from '../../types'
+import { ImageOff, Plus } from 'lucide-react'
+import { useState } from 'react'
 
-interface Props {
-  product: Product
-  index: number
-}
+interface Props { product: Product; index: number }
 
-export function ProductCard({ product, index }: Props) {
-  const addProduct = useCart(s => s.addProduct)
+export default function ProductCard({ product, index }: Props) {
+  const { addProduct } = useCart()
+  const [imgError, setImgError] = useState(false)
+  const [added, setAdded] = useState(false)
+
+  const handleAdd = () => {
+    addProduct(product)
+    setAdded(true)
+    setTimeout(() => setAdded(false), 600)
+  }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-      className="card flex flex-col gap-3"
+      transition={{ delay: index * 0.04, duration: 0.3 }}
+      className="card-hover flex flex-col overflow-hidden p-0"
     >
-      {/* Produktbild */}
-      <div className="w-full h-32 rounded-xl bg-brand-border overflow-hidden">
-        {product.image_url ? (
-          <img src={product.image_url} alt={product.name}
-               className="w-full h-full object-cover" />
+      {/* Image */}
+      <div className="relative h-40 bg-brand-surface-2 flex items-center justify-center overflow-hidden rounded-t-2xl">
+        {product.image_url && !imgError ? (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover"
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center
-                          text-brand-muted text-4xl font-display">
-            {product.name[0]}
-          </div>
+          <ImageOff className="w-8 h-8 text-brand-text-faint" />
         )}
+        {/* Price badge */}
+        <div className="absolute bottom-2 right-2 bg-brand-bg/90 backdrop-blur-sm border border-brand-border px-2 py-0.5 rounded-lg text-sm font-bold text-brand-accent">
+          {product.price.toFixed(2)} €
+        </div>
       </div>
 
       {/* Info */}
-      <div className="flex-1">
-        <p className="text-xs text-brand-text-muted mb-0.5">{product.brand}</p>
-        <p className="font-semibold text-sm leading-snug">{product.name}</p>
-      </div>
-
-      {/* Preis + Button */}
-      <div className="flex items-center justify-between">
-        <span className="font-display text-brand-accent font-bold text-lg">
-          {product.price.toFixed(2)} €
-        </span>
+      <div className="p-3 flex flex-col flex-1">
+        <p className="text-xs text-brand-text-faint mb-0.5">{product.brand}</p>
+        <p className="font-medium text-brand-text text-sm leading-tight flex-1">{product.name}</p>
         <motion.button
-          whileTap={{ scale: 0.88 }}
-          onClick={() => addProduct(product)}
-          className="w-9 h-9 rounded-xl bg-brand-accent flex items-center justify-center"
+          whileTap={{ scale: 0.92 }}
+          onClick={handleAdd}
+          animate={{ backgroundColor: added ? '#4ADE80' : '#FF6B2B' }}
+          className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-white text-sm font-semibold transition-colors"
         >
-          <Plus size={18} className="text-white" />
+          <Plus className="w-4 h-4" />
+          {added ? 'Hinzugefügt!' : 'In den Warenkorb'}
         </motion.button>
       </div>
     </motion.div>
