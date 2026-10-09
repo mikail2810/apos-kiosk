@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import { useCart } from '../hooks/useCart'
+import { useAuth } from '../hooks/useAuth'
 import { CheckCircle, ArrowLeft, ShoppingBag } from 'lucide-react'
 
 type Step = 'form' | 'success'
@@ -10,17 +11,17 @@ type Step = 'form' | 'success'
 export default function CheckoutPage() {
   const navigate = useNavigate()
   const { items, total, clear } = useCart()
+  const { user } = useAuth()
   const [step, setStep] = useState<Step>('form')
   const [name, setName] = useState('')
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(false)
+  const [orderId, setOrderId] = useState<string | null>(null)
 
   if (items.length === 0 && step === 'form') {
     navigate('/')
     return null
   }
-
-  const pickupTime = new Date(Date.now() + 30 * 60 * 1000).toISOString()
 
   const orderItems = items.map(item => {
     if (item.type === 'product') return {
@@ -33,7 +34,7 @@ export default function CheckoutPage() {
       type: 'mystery',
       name: `Mystery Box ${item.tier.name}`,
       quantity: item.quantity,
-      unit_price: item.tier[`price_${item.size}` as keyof typeof item.tier] as number,
+      unit_price: item.tier.price_per_item * item.size,
       tier_name: item.tier.name,
       size: item.size,
     }
@@ -42,15 +43,18 @@ export default function CheckoutPage() {
   const submit = async () => {
     if (!name.trim()) return
     setLoading(true)
-    await supabase.from('orders').insert({
+    const { data } = await supabase.from('orders').insert({
       customer_name: name.trim(),
       items: orderItems,
       total: total(),
-      pickup_time: pickupTime,
+      pickup_time: null,
       status: 'pending',
       note: note.trim() || null,
-    })
+      customer_id: user?.id ?? null,
+    }).select('id').single()
     clear()
+    const newOrderId = data?.id ?? null
+    setOrderId(newOrderId)
     setStep('success')
     setLoading(false)
   }
@@ -66,7 +70,7 @@ export default function CheckoutPage() {
             </button>
           )}
           <h1 className="font-display font-bold text-lg text-brand-text">
-            {step === 'form' ? 'Bestellen' : 'Bestätigung'}
+            {step === 'form' ? 'Bestellen' : 'Bestaetigung'}
           </h1>
         </div>
       </header>
@@ -84,15 +88,15 @@ export default function CheckoutPage() {
                   {items.map((item, i) => (
                     <div key={i} className="flex justify-between text-sm">
                       <span className="text-brand-text-muted">
-                        {item.quantity}×{' '}
+                        {item.quantity}x{' '}
                         {item.type === 'product'
                           ? item.product.name
-                          : `Mystery Box ${item.tier.name} (×${item.size})`}
+                          : `Mystery Box ${item.tier.name} (${item.size}x Stueck)`}
                       </span>
                       <span className="text-brand-text">
                         {(item.type === 'product'
                           ? item.product.price * item.quantity
-                          : (item.tier[`price_${item.size}` as keyof typeof item.tier] as number) * item.quantity
+                          : item.tier.price_per_item * item.size * item.quantity
                         ).toFixed(2)} €
                       </span>
                     </div>
@@ -120,8 +124,13 @@ export default function CheckoutPage() {
                   onChange={e => setNote(e.target.value)}
                 />
                 <p className="text-xs text-brand-text-muted">
-                  Abholzeit: ~{new Date(pickupTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                  Abholzeit wird vom Admin mitgeteilt.
                 </p>
+                {user && (
+                  <p className="text-xs text-brand-accent">
+                    Eingeloggt als {user.email} — Bestellung wird deinem Konto zugeordnet.
+                  </p>
+                )}
                 <button
                   onClick={submit}
                   disabled={!name.trim() || loading}
@@ -148,11 +157,18 @@ export default function CheckoutPage() {
               </motion.div>
               <h2 className="text-2xl font-display font-bold text-brand-text mb-2">Bestellung aufgegeben!</h2>
               <p className="text-brand-text-muted mb-8">
-                Abholung um ~{new Date(pickupTime).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                Der Admin teilt dir die Abholzeit mit.
               </p>
-              <button onClick={() => navigate('/')} className="btn-primary">
-                Zurück zum Shop
-              </button>
+              <div className="flex flex-col gap-3 max-w-xs mx-auto">
+                {orderId && (
+                  <button onClick={() => navigate(`/status/${orderId}`)} className="btn-primary">
+                    Bestellstatus verfolgen
+                  </button>
+                )}
+                <button onClick={() => navigate('/')} className="btn-secondary">
+                  Zurueck zum Shop
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

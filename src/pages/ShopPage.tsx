@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import { Product, MysteryBoxTier } from '../types'
 import { useCart } from '../hooks/useCart'
+import { useAuth } from '../hooks/useAuth'
 import ProductCard from '../components/customer/ProductCard'
 import MysteryBoxCard from '../components/customer/MysteryBoxCard'
 import CartDrawer from '../components/customer/CartDrawer'
-import { ShoppingCart, Search, Settings } from 'lucide-react'
+import FeaturedBanner from '../components/customer/FeaturedBanner'
+import { ShoppingCart, Search, User } from 'lucide-react'
 
 const TABS = ['Produkte', 'Mystery Box'] as const
 type Tab = typeof TABS[number]
@@ -20,11 +22,12 @@ export default function ShopPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const { count, openCart } = useCart()
+  const { user } = useAuth()
 
   useEffect(() => {
     Promise.all([
       supabase.from('products').select('*').eq('active', true).order('name'),
-      supabase.from('mystery_box_tiers').select('*').eq('active', true),
+      supabase.from('mystery_box_tiers').select('*').order('category').order('name'),
     ]).then(([{ data: p }, { data: t }]) => {
       setProducts(p ?? [])
       setTiers(t ?? [])
@@ -37,6 +40,9 @@ export default function ShopPage() {
     p.brand.toLowerCase().includes(search.toLowerCase())
   )
 
+  const suesswareTiers = tiers.filter(t => t.category === 'suessware')
+  const teeTiers = tiers.filter(t => t.category === 'tee')
+
   return (
     <div className="min-h-dvh bg-brand-bg">
       {/* Header */}
@@ -47,8 +53,12 @@ export default function ShopPage() {
             <p className="text-xs text-brand-text-muted">Schule Kiosk</p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate('/admin')} className="p-2 rounded-xl hover:bg-brand-surface-2 text-brand-text-faint">
-              <Settings className="w-4 h-4" />
+            <button
+              onClick={() => navigate(user ? '/profil' : '/login')}
+              className="p-2 rounded-xl hover:bg-brand-surface-2 text-brand-text-muted"
+              title={user ? 'Mein Profil' : 'Einloggen'}
+            >
+              <User className={`w-4 h-4 ${user ? 'text-brand-accent' : ''}`} />
             </button>
             <button onClick={openCart} className="relative p-2 rounded-xl hover:bg-brand-surface-2 text-brand-text">
               <ShoppingCart className="w-5 h-5" />
@@ -98,6 +108,11 @@ export default function ShopPage() {
           </div>
         )}
 
+        {/* Featured banner */}
+        {tab === 'Produkte' && !loading && (
+          <FeaturedBanner products={products} />
+        )}
+
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
@@ -124,14 +139,45 @@ export default function ShopPage() {
               )
             ) : (
               loading ? (
-                <div className="space-y-4">
-                  {[1,2,3].map(i => <div key={i} className="skeleton h-48 rounded-2xl" />)}
+                <div className="grid grid-cols-2 gap-3">
+                  {[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-48 rounded-2xl" />)}
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {tiers.map(tier => (
-                    <MysteryBoxCard key={tier.id} tier={tier} />
-                  ))}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Suesswarenn column */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-lg">🍬</span>
+                      <h2 className="font-display font-bold text-brand-text text-base">Suesswarenn</h2>
+                    </div>
+
+                    <div className="space-y-3">
+                      {suesswareTiers.length === 0 ? (
+                        <p className="text-xs text-brand-text-muted py-4 text-center">Keine Tiers</p>
+                      ) : (
+                        suesswareTiers.map(tier => (
+                          <MysteryBoxCard key={tier.id} tier={tier} />
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tee column */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-lg">🍵</span>
+                      <h2 className="font-display font-bold text-brand-text text-base">Tee</h2>
+                    </div>
+                    <div className="space-y-3">
+                      {teeTiers.length === 0 ? (
+                        <p className="text-xs text-brand-text-muted py-4 text-center">Keine Tiers</p>
+                      ) : (
+                        teeTiers.map(tier => (
+                          <MysteryBoxCard key={tier.id} tier={tier} />
+                        ))
+                      )}
+                    </div>
+                  </div>
                 </div>
               )
             )}

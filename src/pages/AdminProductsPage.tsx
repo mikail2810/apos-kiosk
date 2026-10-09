@@ -3,9 +3,19 @@ import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from '../lib/supabase'
 import { Product } from '../types'
-import { Plus, ArrowLeft, Barcode, Package, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Plus, ArrowLeft, Barcode, Package, Trash2, Eye, EyeOff, Zap, ZapOff, AlertTriangle } from 'lucide-react'
 
-const EMPTY = { name: '', brand: '', barcode: '', price: '', stock: '', category: '', image_url: '' }
+const EMPTY = {
+  name: '',
+  brand: '',
+  barcode: '',
+  price: '',
+  stock: '',
+  category: '',
+  image_url: '',
+  featured_until: '',
+  low_stock_threshold: '5',
+}
 
 export default function AdminProductsPage() {
   const navigate = useNavigate()
@@ -38,6 +48,8 @@ export default function AdminProductsPage() {
       category: form.category || 'Sonstiges',
       image_url: form.image_url || null,
       active: true,
+      featured_until: form.featured_until || null,
+      low_stock_threshold: parseInt(form.low_stock_threshold) || 5,
     })
     setForm(EMPTY)
     setShowForm(false)
@@ -53,6 +65,23 @@ export default function AdminProductsPage() {
   const deleteProduct = async (id: string) => {
     await supabase.from('products').delete().eq('id', id)
     await loadProducts()
+  }
+
+  const toggleFeatured = async (p: Product) => {
+    const now = new Date()
+    const isFeatured = p.featured_until && new Date(p.featured_until) > now
+    const newValue = isFeatured ? null : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    await supabase.from('products').update({ featured_until: newValue }).eq('id', p.id)
+    await loadProducts()
+  }
+
+  const isLowStock = (p: Product) => {
+    const threshold = p.low_stock_threshold ?? 5
+    return p.stock < threshold
+  }
+
+  const isFeatured = (p: Product) => {
+    return !!(p.featured_until && new Date(p.featured_until) > new Date())
   }
 
   return (
@@ -83,7 +112,7 @@ export default function AdminProductsPage() {
             >
               <div className="card space-y-3">
                 <h2 className="font-semibold text-brand-text flex items-center gap-2">
-                  <Barcode className="w-4 h-4 text-brand-accent" /> Produkt hinzufügen
+                  <Barcode className="w-4 h-4 text-brand-accent" /> Produkt hinzufuegen
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
                   <input className="input-field col-span-2" placeholder="Name *" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
@@ -93,6 +122,25 @@ export default function AdminProductsPage() {
                   <input className="input-field" type="number" placeholder="Bestand" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} />
                   <input className="input-field" placeholder="Kategorie" value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} />
                   <input className="input-field" placeholder="Bild-URL" value={form.image_url} onChange={e => setForm(f => ({ ...f, image_url: e.target.value }))} />
+                  <div className="col-span-2">
+                    <label className="text-xs text-brand-text-muted block mb-1">Tagesangebot bis (optional)</label>
+                    <input
+                      className="input-field w-full"
+                      type="datetime-local"
+                      value={form.featured_until}
+                      onChange={e => setForm(f => ({ ...f, featured_until: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-brand-text-muted block mb-1">Mindestbestand-Warnung</label>
+                    <input
+                      className="input-field"
+                      type="number"
+                      placeholder="5"
+                      value={form.low_stock_threshold}
+                      onChange={e => setForm(f => ({ ...f, low_stock_threshold: e.target.value }))}
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-2 pt-1">
                   <button onClick={save} disabled={saving} className="btn-primary flex-1">
@@ -122,10 +170,29 @@ export default function AdminProductsPage() {
             {products.map(p => (
               <div key={p.id} className={`card flex items-center gap-3 ${!p.active ? 'opacity-50' : ''}`}>
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-brand-text truncate">{p.name}</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium text-brand-text truncate">{p.name}</p>
+                    {isFeatured(p) && (
+                      <span className="flex items-center gap-0.5 text-xs font-bold text-brand-accent bg-brand-accent/10 border border-brand-accent/20 px-1.5 py-0.5 rounded-full">
+                        <Zap className="w-3 h-3" /> Tagesangebot
+                      </span>
+                    )}
+                    {isLowStock(p) && (
+                      <span className="flex items-center gap-0.5 text-xs font-bold text-red-400 bg-red-400/10 border border-red-400/20 px-1.5 py-0.5 rounded-full">
+                        <AlertTriangle className="w-3 h-3" /> Lager niedrig
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-brand-text-muted">{p.brand} · {p.price.toFixed(2)} € · Bestand: {p.stock}</p>
                 </div>
                 <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => toggleFeatured(p)}
+                    className={`p-2 rounded-xl transition-colors ${isFeatured(p) ? 'text-brand-accent hover:bg-brand-accent/10' : 'text-brand-text-muted hover:bg-brand-surface-2'}`}
+                    title={isFeatured(p) ? 'Tagesangebot entfernen' : 'Als Tagesangebot setzen'}
+                  >
+                    {isFeatured(p) ? <ZapOff className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
+                  </button>
                   <button onClick={() => toggleActive(p)} className="p-2 rounded-xl hover:bg-brand-surface-2 text-brand-text-muted">
                     {p.active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                   </button>

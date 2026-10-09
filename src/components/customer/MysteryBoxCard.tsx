@@ -6,7 +6,7 @@ import { Gift, Plus, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface Props { tier: MysteryBoxTier }
 
-const SIZES: MysteryBoxSize[] = [1, 3, 5, 10]
+const SIZES: MysteryBoxSize[] = [1, 2, 3, 4, 5]
 
 const TIER_STYLES: Record<string, { gradient: string; border: string; glow: string }> = {
   'Standard': {
@@ -33,7 +33,7 @@ export default function MysteryBoxCard({ tier }: Props) {
   const [added, setAdded] = useState(false)
 
   const style = TIER_STYLES[tier.name] ?? TIER_STYLES['Standard']
-  const price = tier[`price_${selectedSize}` as keyof typeof tier] as number
+  const price = tier.price_per_item * selectedSize
 
   const handleAdd = () => {
     addMystery(tier, selectedSize)
@@ -55,7 +55,7 @@ export default function MysteryBoxCard({ tier }: Props) {
             </div>
             <div>
               <h3 className="font-display font-bold text-brand-text">{tier.name}</h3>
-              <p className={`text-xs font-semibold ${style.glow}`}>{price.toFixed(2)} €</p>
+              <p className={`text-xs font-semibold ${style.glow}`}>{tier.price_per_item.toFixed(2)} € / Stück</p>
             </div>
           </div>
           <button onClick={() => setExpanded(e => !e)} className="p-1.5 rounded-lg hover:bg-brand-bg/30 text-brand-text-muted">
@@ -63,10 +63,10 @@ export default function MysteryBoxCard({ tier }: Props) {
           </button>
         </div>
 
-        {/* Size picker */}
-        <div className="flex gap-2 mb-3">
+        {/* Size picker: 1–5 */}
+        <div className="flex gap-1.5 mb-3">
           {SIZES.map(size => {
-            const sizePrice = tier[`price_${size}` as keyof typeof tier] as number
+            const sizePrice = tier.price_per_item * size
             return (
               <button
                 key={size}
@@ -77,11 +77,11 @@ export default function MysteryBoxCard({ tier }: Props) {
                     : 'bg-brand-bg/30 border border-brand-bg/20 text-brand-text-muted hover:text-brand-text'
                 }`}
               >
-                ×{size}
+                {size}×
                 <br />
-                <span className="text-[10px] opacity-70">{sizePrice.toFixed(0)} €</span>
+                <span className="text-[10px] opacity-70">{sizePrice.toFixed(2)} €</span>
                 {selectedSize === size && (
-                  <motion.div layoutId={`sel-${tier.id}`} className="absolute inset-0 rounded-xl bg-brand-accent/10" />
+                  <motion.div layoutId={`sel-${tier.id}-${tier.category}`} className="absolute inset-0 rounded-xl bg-brand-accent/10" />
                 )}
               </button>
             )
@@ -109,11 +109,12 @@ export default function MysteryBoxCard({ tier }: Props) {
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 pt-0 border-t border-brand-bg/30">
-              <div className="mt-3 space-y-1.5">
+              <p className="text-xs text-brand-text-muted mt-3 mb-2">{tier.description}</p>
+              <div className="space-y-1">
                 {SIZES.map(s => (
                   <div key={s} className="flex justify-between text-xs">
                     <span className="text-brand-text-muted">{s}× Box</span>
-                    <span className={style.glow}>{(tier[`price_${s}` as keyof typeof tier] as number).toFixed(2)} €</span>
+                    <span className={style.glow}>{(tier.price_per_item * s).toFixed(2)} €</span>
                   </div>
                 ))}
               </div>
