@@ -10,7 +10,7 @@ export default defineConfig({
       manifest: {
         name: "Apo's Kiosk",
         short_name: "Apo's Kiosk",
-        description: 'Bestelle online, hol ab beim Kiosk',
+        description: 'Apos Kiosk – Schule',
         theme_color: '#1A2E1A',
         background_color: '#0F1F0F',
         display: 'standalone',
