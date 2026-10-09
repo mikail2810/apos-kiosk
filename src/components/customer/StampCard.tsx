@@ -23,7 +23,9 @@ export default function StampCard({ stampCount, cycleNumber }: Props) {
               animate={filled ? { scale: [1, 1.2, 1] } : { scale: 1 }}
               transition={{ duration: 0.3, delay: filled ? i * 0.05 : 0 }}
               className={`aspect-square rounded-xl border-2 flex items-center justify-center transition-colors ${
-                filled ? 'bg-brand-accent/20 border-brand-accent' : 'bg-brand-surface-2 border-brand-border'
+                filled
+                  ? 'bg-brand-accent/20 border-brand-accent'
+                  : 'bg-brand-surface-2 border-brand-border'
               }`}
             >
               {filled ? (
@@ -37,7 +39,9 @@ export default function StampCard({ stampCount, cycleNumber }: Props) {
       </div>
       <p className="text-center text-xs text-brand-text-muted">
         <span className="text-brand-accent font-semibold">{stampCount}</span>/10 Stempel
-        {stampCount >= 10 && <span className="ml-2 text-brand-success font-semibold">Belohnung freigeschaltet!</span>}
+        {stampCount >= 10 && (
+          <span className="ml-2 text-brand-success font-semibold">Belohnung freigeschaltet!</span>
+        )}
       </p>
     </div>
   )

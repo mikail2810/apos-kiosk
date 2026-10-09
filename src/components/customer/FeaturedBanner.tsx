@@ -23,7 +23,12 @@ export default function FeaturedBanner({ products }: Props) {
       <div className="flex items-center gap-4 p-4">
         <div className="w-16 h-16 rounded-xl bg-brand-surface-2 flex-shrink-0 overflow-hidden flex items-center justify-center">
           {featured.image_url && !imgError ? (
-            <img src={featured.image_url} alt={featured.name} onError={() => setImgError(true)} className="w-full h-full object-cover" />
+            <img
+              src={featured.image_url}
+              alt={featured.name}
+              onError={() => setImgError(true)}
+              className="w-full h-full object-cover"
+            />
           ) : (
             <ImageOff className="w-6 h-6 text-brand-text-faint" />
           )}

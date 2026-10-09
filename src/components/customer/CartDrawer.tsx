@@ -69,7 +69,7 @@ export default function CartDrawer() {
                       : `Mystery Box ${item.tier.name} (×${item.size})`
                     const price = item.type === 'product'
                       ? item.product.price
-                      : item.tier[`price_${item.size}` as keyof typeof item.tier] as number
+                      : item.tier.price_per_item * item.size
 
                     return (
                       <motion.div

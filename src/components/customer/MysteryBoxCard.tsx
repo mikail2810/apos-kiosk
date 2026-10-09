@@ -9,21 +9,9 @@ interface Props { tier: MysteryBoxTier }
 const SIZES: MysteryBoxSize[] = [1, 2, 3, 4, 5]
 
 const TIER_STYLES: Record<string, { gradient: string; border: string; glow: string }> = {
-  'Standard': {
-    gradient: 'from-emerald-900/40 to-emerald-800/20',
-    border: 'border-emerald-700/30',
-    glow: 'text-emerald-400',
-  },
-  'Premium': {
-    gradient: 'from-blue-900/40 to-blue-800/20',
-    border: 'border-blue-700/30',
-    glow: 'text-blue-400',
-  },
-  'Premium+': {
-    gradient: 'from-amber-900/40 to-amber-800/20',
-    border: 'border-amber-600/30',
-    glow: 'text-amber-400',
-  },
+  'Standard': { gradient: 'from-emerald-900/40 to-emerald-800/20', border: 'border-emerald-700/30', glow: 'text-emerald-400' },
+  'Premium': { gradient: 'from-blue-900/40 to-blue-800/20', border: 'border-blue-700/30', glow: 'text-blue-400' },
+  'Premium+': { gradient: 'from-amber-900/40 to-amber-800/20', border: 'border-amber-600/30', glow: 'text-amber-400' },
 }
 
 export default function MysteryBoxCard({ tier }: Props) {
@@ -42,12 +30,8 @@ export default function MysteryBoxCard({ tier }: Props) {
   }
 
   return (
-    <motion.div
-      layout
-      className={`rounded-2xl border bg-gradient-to-br ${style.gradient} ${style.border} overflow-hidden`}
-    >
+    <motion.div layout className={`rounded-2xl border bg-gradient-to-br ${style.gradient} ${style.border} overflow-hidden`}>
       <div className="p-4">
-        {/* Title row */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-xl bg-brand-bg/50 flex items-center justify-center ${style.glow}`}>
@@ -62,32 +46,25 @@ export default function MysteryBoxCard({ tier }: Props) {
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
-
-        {/* Size picker: 1–5 */}
         <div className="flex gap-1.5 mb-3">
-          {SIZES.map(size => {
-            const sizePrice = tier.price_per_item * size
-            return (
-              <button
-                key={size}
-                onClick={() => setSelectedSize(size)}
-                className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all relative ${
-                  selectedSize === size
-                    ? 'bg-brand-bg/60 border border-brand-accent/50 text-brand-accent'
-                    : 'bg-brand-bg/30 border border-brand-bg/20 text-brand-text-muted hover:text-brand-text'
-                }`}
-              >
-                {size}×
-                <br />
-                <span className="text-[10px] opacity-70">{sizePrice.toFixed(2)} €</span>
-                {selectedSize === size && (
-                  <motion.div layoutId={`sel-${tier.id}-${tier.category}`} className="absolute inset-0 rounded-xl bg-brand-accent/10" />
-                )}
-              </button>
-            )
-          })}
+          {SIZES.map(size => (
+            <button
+              key={size}
+              onClick={() => setSelectedSize(size)}
+              className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all relative ${
+                selectedSize === size
+                  ? 'bg-brand-bg/60 border border-brand-accent/50 text-brand-accent'
+                  : 'bg-brand-bg/30 border border-brand-bg/20 text-brand-text-muted hover:text-brand-text'
+              }`}
+            >
+              {size}×<br />
+              <span className="text-[10px] opacity-70">{(tier.price_per_item * size).toFixed(2)} €</span>
+              {selectedSize === size && (
+                <motion.div layoutId={`sel-${tier.id}-${tier.category}`} className="absolute inset-0 rounded-xl bg-brand-accent/10" />
+              )}
+            </button>
+          ))}
         </div>
-
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={handleAdd}
@@ -98,16 +75,9 @@ export default function MysteryBoxCard({ tier }: Props) {
           {added ? 'Hinzugefügt!' : `${selectedSize}× Mystery Box · ${price.toFixed(2)} €`}
         </motion.button>
       </div>
-
-      {/* Expanded details */}
       <AnimatePresence>
         {expanded && (
-          <motion.div
-            initial={{ height: 0 }}
-            animate={{ height: 'auto' }}
-            exit={{ height: 0 }}
-            className="overflow-hidden"
-          >
+          <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
             <div className="px-4 pb-4 pt-0 border-t border-brand-bg/30">
               <p className="text-xs text-brand-text-muted mt-3 mb-2">{tier.description}</p>
               <div className="space-y-1">

@@ -22,6 +22,7 @@ export const useAuth = create<AuthState>((set) => ({
     set({ session: data.session, user: data.session?.user ?? null, loading: false })
     supabase.auth.onAuthStateChange((_event, session) => {
       set({ session, user: session?.user ?? null })
+      // Ensure customer record exists
       if (session?.user) {
         supabase.from('customers').upsert({
           id: session.user.id,

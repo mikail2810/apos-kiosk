@@ -30,8 +30,15 @@ export default function OrderHistoryPage() {
 
   useEffect(() => {
     if (!user) return
-    supabase.from('orders').select('*').eq('customer_id', user.id).order('created_at', { ascending: false })
-      .then(({ data }) => { setOrders((data ?? []) as Order[]); setDataLoading(false) })
+    supabase
+      .from('orders')
+      .select('*')
+      .eq('customer_id', user.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setOrders((data ?? []) as Order[])
+        setDataLoading(false)
+      })
   }, [user])
 
   if (loading || !user) return null
@@ -61,20 +68,38 @@ export default function OrderHistoryPage() {
         ) : (
           <div className="space-y-3">
             {orders.map((order, i) => {
-              const itemsSummary = order.items.slice(0, 2).map(item => `${item.quantity}x ${item.name}`).join(', ')
+              const itemsSummary = order.items
+                .slice(0, 2)
+                .map(item => `${item.quantity}x ${item.name}`)
+                .join(', ')
               const moreItems = order.items.length > 2 ? ` +${order.items.length - 2} mehr` : ''
+
               return (
-                <motion.div key={order.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-                  onClick={() => navigate(`/status/${order.id}`)} className="card cursor-pointer hover:bg-brand-surface-2 transition-colors">
+                <motion.div
+                  key={order.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  onClick={() => navigate(`/status/${order.id}`)}
+                  className="card cursor-pointer hover:bg-brand-surface-2 transition-colors"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`badge border text-xs ${statusColor(order.status)}`}>{statusLabel(order.status)}</span>
+                        <span className={`badge border text-xs ${statusColor(order.status)}`}>
+                          {statusLabel(order.status)}
+                        </span>
                         <span className="text-xs text-brand-text-muted">
-                          {new Date(order.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          {new Date(order.created_at).toLocaleDateString('de-DE', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                          })}
                         </span>
                       </div>
-                      <p className="text-sm text-brand-text-muted truncate">{itemsSummary}{moreItems}</p>
+                      <p className="text-sm text-brand-text-muted truncate">
+                        {itemsSummary}{moreItems}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className="font-semibold text-brand-accent">{order.total.toFixed(2)} €</span>

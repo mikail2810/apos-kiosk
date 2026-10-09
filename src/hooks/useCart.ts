@@ -64,8 +64,7 @@ export const useCart = create<CartStore>((set, get) => ({
 
   total: () => get().items.reduce((acc, item) => {
     if (item.type === 'product') return acc + item.product.price * item.quantity
-    const priceKey = `price_${item.size}` as keyof typeof item.tier
-    return acc + (item.tier[priceKey] as number) * item.quantity
+    return acc + item.tier.price_per_item * item.size * item.quantity
   }, 0),
 
   count: () => get().items.reduce((acc, item) => acc + item.quantity, 0),

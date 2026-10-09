@@ -15,7 +15,9 @@ export default function CustomerProfilePage() {
   const [dataLoading, setDataLoading] = useState(true)
 
   useEffect(() => {
-    if (!loading && !user) navigate('/login')
+    if (!loading && !user) {
+      navigate('/login')
+    }
   }, [user, loading, navigate])
 
   useEffect(() => {
@@ -56,6 +58,7 @@ export default function CustomerProfilePage() {
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-6 space-y-4">
+        {/* User info */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="card">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-brand-accent/10 border border-brand-accent/20 flex items-center justify-center">
@@ -70,14 +73,19 @@ export default function CustomerProfilePage() {
           </div>
         </motion.div>
 
+        {/* Stamp card */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
           {dataLoading ? (
             <div className="skeleton h-36 rounded-2xl" />
           ) : (
-            <StampCard stampCount={loyaltyCard?.stamp_count ?? 0} cycleNumber={loyaltyCard?.cycle ?? 1} />
+            <StampCard
+              stampCount={loyaltyCard?.stamp_count ?? 0}
+              cycleNumber={loyaltyCard?.cycle ?? 1}
+            />
           )}
         </motion.div>
 
+        {/* Pending rewards */}
         {rewards.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="card">
             <h3 className="font-semibold text-brand-text mb-3 flex items-center gap-2">
@@ -92,7 +100,9 @@ export default function CustomerProfilePage() {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-brand-text-muted">Laeuft ab</p>
-                    <p className="text-xs text-brand-text">{new Date(r.expires_at).toLocaleDateString('de-DE')}</p>
+                    <p className="text-xs text-brand-text">
+                      {new Date(r.expires_at).toLocaleDateString('de-DE')}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -100,6 +110,7 @@ export default function CustomerProfilePage() {
           </motion.div>
         )}
 
+        {/* Navigation */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <Link to="/profil/bestellungen" className="card flex items-center gap-3 hover:bg-brand-surface-2 transition-colors">
             <div className="w-10 h-10 rounded-xl bg-brand-surface-2 flex items-center justify-center">
@@ -109,7 +120,7 @@ export default function CustomerProfilePage() {
               <p className="font-medium text-brand-text">Bestellverlauf</p>
               <p className="text-xs text-brand-text-muted">Alle deine Bestellungen</p>
             </div>
-            <span className="text-brand-text-muted text-lg">&#x203A;</span>
+            <span className="text-brand-text-muted text-lg">›</span>
           </Link>
         </motion.div>
       </main>

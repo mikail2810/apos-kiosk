@@ -1,4 +1,3 @@
-// rebuild
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -151,7 +150,6 @@ export default function ShopPage() {
                       <span className="text-lg">🍬</span>
                       <h2 className="font-display font-bold text-brand-text text-base">Suesswarenn</h2>
                     </div>
-
                     <div className="space-y-3">
                       {suesswareTiers.length === 0 ? (
                         <p className="text-xs text-brand-text-muted py-4 text-center">Keine Tiers</p>
@@ -162,7 +160,6 @@ export default function ShopPage() {
                       )}
                     </div>
                   </div>
-
                   {/* Tee column */}
                   <div>
                     <div className="flex items-center gap-2 mb-3">
